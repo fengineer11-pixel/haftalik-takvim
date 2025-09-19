@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haftalık Takvim</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            touch-action: pan-x;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .week-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .nav-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+        
+        .week-display {
+            padding: 20px 10px;
+            overflow-x: hidden;
+        }
+        
+        .days-container {
+            display: flex;
+            transition: transform 0.3s ease;
+            width: calc(100% * 3);
+            transform: translateX(-33.33%);
+        }
+        
+        .week {
+            width: 33.33%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 0 10px;
+            flex-shrink: 0;
+        }
+        
+        .day-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .day-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .day-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .day-date {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .day-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .action-btn {
+            width: 25px;
+            height: 25px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .add-btn {
+            background: #28a745;
+            color: white;
+        }
+        
+        .add-btn:hover {
+            background: #218838;
+            transform: scale(1.1);
+        }
+        
+        .tasks-list {
+            min-height: 40px;
+        }
+        
+        .task-item {
+            background: white;
+            margin: 5px 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .task-text {
+            flex-grow: 1;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .delete-btn:hover {
+            background: #c82333;
+            transform: scale(1.1);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 50% auto;
+            padding: 20px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 300px;
+            transform: translateY(-50%);
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .modal input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .modal input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .modal-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-btn.save {
+            background: #28a745;
+            color: white;
+        }
+        
+        .modal-btn.cancel {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .modal-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .today {
+            border-left-color: #ffd700 !important;
+            background: linear-gradient(135deg, #fff9c4, #f8f9fa) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Haftalık Takvim</h1>
+            <div class="week-nav">
+                <button class="nav-btn" onclick="previousWeek()">‹</button>
+                <span id="currentWeekRange"></span>
+                <button class="nav-btn" onclick="nextWeek()">›</button>
+            </div>
+        </div>
+        
+        <div class="week-display">
+            <div class="days-container" id="daysContainer">
+                <div class="week" id="prevWeek"></div>
+                <div class="week" id="currentWeek"></div>
+                <div class="week" id="nextWeek"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Görev Ekleme Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <h3>Yeni Görev Ekle</h3>
+            <input type="text" id="taskInput" placeholder="Görev açıklaması...">
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal()">İptal</button>
+                <button class="modal-btn save" onclick="saveTask()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentWeekOffset = 0;
+        let currentTaskDay = null;
+        let tasks = {};
+
+        const dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+        const monthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+                           'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+        function getWeekStart(offset = 0) {
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            const monday = new Date(today);
+            monday.setDate(today.getDate() + mondayOffset + (offset * 7));
+            return monday;
+        }
+
+        function formatDate(date) {
+            const day = date.getDate();
+            const month = monthNames[date.getMonth()];
+            return `${day} ${month}`;
+        }
+
+        function getDateString(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function isToday(date) {
+            const today = new Date();
+            return date.toDateString() === today.toDateString();
+        }
+
+        function createDayCard(date, dayName) {
+            const dateString = getDateString(date);
+            const dayTasks = tasks[dateString] || [];
+            const todayClass = isToday(date) ? 'today' : '';
+            
+            return `
+                <div class="day-card ${todayClass}">
+                    <div class="day-header">
+                        <div>
+                            <div class="day-name">${dayName}</div>
+                            <div class="day-date">${formatDate(date)}</div>
+                        </div>
+                        <div class="day-actions">
+                            <button class="action-btn add-btn" onclick="openModal('${dateString}')">+</button>
+                        </div>
+                    </div>
+                    <div class="tasks-list">
+                        ${dayTasks.map((task, index) => `
+                            <div class="task-item">
+                                <span class="task-text">${task}</span>
+                                <button class="delete-btn" onclick="deleteTask('${dateString}', ${index})">×</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWeek(weekOffset, containerId) {
+            const weekStart = getWeekStart(weekOffset);
+            const container = document.getElementById(containerId);
+            
+            let weekHTML = '';
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(weekStart);
+                date.setDate(weekStart.getDate() + i);
+                weekHTML += createDayCard(date, dayNames[i]);
+            }
+            
+            container.innerHTML = weekHTML;
+        }
+
+        function updateWeekRange() {
+            const weekStart = getWeekStart(currentWeekOffset);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            
+            const rangeText = `${formatDate(weekStart)} - ${formatDate(weekEnd)}`;
+            document.getElementById('currentWeekRange').textContent = rangeText;
+        }
+
+        function renderAllWeeks() {
+            renderWeek(currentWeekOffset - 1, 'prevWeek');
+            renderWeek(currentWeekOffset, 'currentWeek');
+            renderWeek(currentWeekOffset + 1, 'nextWeek');
+            updateWeekRange();
+        }
+
+        function previousWeek() {
+            currentWeekOffset--;
+            const container = document.getElementById('daysContainer');
+            container.style.transform = 'translateX(0%)';
+            
+            setTimeout(() => {
+                renderAllWeeks();
+                container.style.transition = 'none';
+                container.style.transform = 'translateX(-33.33%)';
+                setTimeout(() => {
+                    container.style.transition = 'transform 0.3s ease';
+                }, 50);
+            }, 300);
+        }
+
+        function nextWeek() {
+            currentWeekOffset++;
+            const container = document.getElementById('daysContainer');
+            container.style.transform = 'translateX(-66.66%)';
+            
+            setTimeout(() => {
+                renderAllWeeks();
+                container.style.transition = 'none';
+                container.style.transform = 'translateX(-33.33%)';
+                setTimeout(() => {
+                    container.style.transition = 'transform 0.3s ease';
+                }, 50);
+            }, 300);
+        }
+
+        function openModal(dateString) {
+            currentTaskDay = dateString;
+            document.getElementById('taskModal').style.display = 'block';
+            document.getElementById('taskInput').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('taskModal').style.display = 'none';
+            document.getElementById('taskInput').value = '';
+            currentTaskDay = null;
+        }
+
+        function saveTask() {
+            const taskText = document.getElementById('taskInput').value.trim();
+            if (taskText && currentTaskDay) {
+                if (!tasks[currentTaskDay]) {
+                    tasks[currentTaskDay] = [];
+                }
+                tasks[currentTaskDay].push(taskText);
+                saveToStorage();
+                renderAllWeeks();
+                closeModal();
+            }
+        }
+
+        function deleteTask(dateString, taskIndex) {
+            if (tasks[dateString]) {
+                tasks[dateString].splice(taskIndex, 1);
+                if (tasks[dateString].length === 0) {
+                    delete tasks[dateString];
+                }
+                saveToStorage();
+                renderAllWeeks();
+            }
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('calendarTasks', JSON.stringify(tasks));
+        }
+
+        function loadFromStorage() {
+            const saved = localStorage.getItem('calendarTasks');
+            if (saved) {
+                tasks = JSON.parse(saved);
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('taskInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                saveTask();
+            }
+        });
+
+        // Modal kapatma
+        document.getElementById('taskModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Dokunmatik kaydırma desteği
+        let startX = 0;
+        let currentX = 0;
+        let isSwipping = false;
+
+        document.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+            isSwipping = true;
+        });
+
+        document.addEventListener('touchmove', function(e) {
+            if (!isSwipping) return;
+            currentX = e.touches[0].clientX;
+        });
+
+        document.addEventListener('touchend', function(e) {
+            if (!isSwipping) return;
+            
+            const deltaX = startX - currentX;
+            const threshold = 50;
+            
+            if (Math.abs(deltaX) > threshold) {
+                if (deltaX > 0) {
+                    nextWeek();
+                } else {
+                    previousWeek();
+                }
+            }
+            
+            isSwipping = false;
+        });
+
+        // Başlangıç
+        window.addEventListener('load', function() {
+            loadFromStorage();
+            renderAllWeeks();
+        });
+    </script>
+</body>
+</html>
